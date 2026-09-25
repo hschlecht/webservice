@@ -1,25 +1,16 @@
 """A small Flask app that serves files from a local directory.
 
-Browse directories, download files, and (optionally) upload new ones.
-Everything is confined to the configured root directory; requests that
-try to escape it (via "..", symlinks, etc.) are rejected.
+Browse directories and download files. Everything is confined to the
+configured root directory; requests that try to escape it (via "..",
+symlinks, etc.) are rejected.
 """
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from pathlib import Path
 
-from flask import (
-    Flask,
-    abort,
-    jsonify,
-    render_template,
-    request,
-    send_from_directory,
-)
-from werkzeug.utils import secure_filename
+from flask import Flask, abort, jsonify, render_template, send_from_directory
 
 
 def _human_size(num_bytes: int) -> str:
@@ -41,16 +32,13 @@ def _resolve_within_root(root: Path, subpath: str) -> Path:
     return candidate
 
 
-def create_app(root_dir: str = ".", show_hidden: bool = False, allow_upload: bool = False) -> Flask:
+def create_app(root_dir: str = ".") -> Flask:
     root = Path(root_dir).expanduser().resolve()
     if not root.is_dir():
         raise NotADirectoryError(f"Not a directory: {root}")
 
     app = Flask(__name__)
     app.config["ROOT_DIR"] = str(root)
-    app.config["SHOW_HIDDEN"] = show_hidden
-    app.config["ALLOW_UPLOAD"] = allow_upload
-    app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1 GiB upload cap
 
     @app.get("/health")
     def health():
@@ -68,7 +56,7 @@ def create_app(root_dir: str = ".", show_hidden: bool = False, allow_upload: boo
 
         entries = []
         for entry in sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
-            if not show_hidden and entry.name.startswith("."):
+            if entry.name.startswith("."):
                 continue
             stat = entry.stat()
             entries.append(
@@ -90,29 +78,6 @@ def create_app(root_dir: str = ".", show_hidden: bool = False, allow_upload: boo
             current_path=subpath,
             parent_rel=parent_rel,
             entries=entries,
-            allow_upload=allow_upload,
         )
-
-    @app.post("/upload/", defaults={"subpath": ""})
-    @app.post("/upload/<path:subpath>")
-    def upload(subpath: str):
-        if not allow_upload:
-            abort(403)
-
-        target_dir = _resolve_within_root(root, subpath)
-        if not target_dir.is_dir():
-            abort(404)
-
-        uploaded = request.files.get("file")
-        if uploaded is None or uploaded.filename == "":
-            abort(400, description="No file provided")
-
-        filename = secure_filename(uploaded.filename)
-        if not filename:
-            abort(400, description="Invalid filename")
-
-        uploaded.save(target_dir / filename)
-        dest = f"/browse/{subpath}" if subpath else "/"
-        return jsonify(status="ok", saved_as=filename), 201, {"Location": dest}
 
     return app

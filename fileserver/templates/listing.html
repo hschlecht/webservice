@@ -14,7 +14,6 @@
     .dir::before { content: "\1F4C1 "; }
     .file::before { content: "\1F4C4 "; }
     .size, .modified { color: #666; font-size: 0.9rem; white-space: nowrap; }
-    form { margin-top: 1.5rem; }
   </style>
 </head>
 <body>
@@ -40,12 +39,5 @@
       {% endfor %}
     </tbody>
   </table>
-
-  {% if allow_upload %}
-  <form action="/upload/{{ current_path }}" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" required>
-    <button type="submit">Upload</button>
-  </form>
-  {% endif %}
 </body>
 </html>
