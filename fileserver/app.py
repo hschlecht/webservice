@@ -7,10 +7,15 @@ symlinks, etc.) are rejected.
 
 from __future__ import annotations
 
+import platform
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, abort, jsonify, render_template, send_from_directory
+
+LAUNCHER_SCRIPT = Path(__file__).resolve().parent.parent / "start_server.py"
 
 
 def _human_size(num_bytes: int) -> str:
@@ -43,6 +48,21 @@ def create_app(root_dir: str = ".") -> Flask:
     @app.get("/health")
     def health():
         return jsonify(status="ok", root=str(root))
+
+    @app.post("/options")
+    def show_options():
+        if platform.system() != "Windows":
+            return jsonify(
+                status="error",
+                message="Opening a terminal window is only supported when this service runs on Windows.",
+            ), 400
+
+        # Opens a real, visible Command Prompt window on the machine running
+        # this service, which then prints start_server.py's --help output.
+        subprocess.Popen(
+            ["cmd", "/c", "start", "", "cmd", "/k", sys.executable, str(LAUNCHER_SCRIPT), "--help"]
+        )
+        return jsonify(status="ok", message="Opened a terminal window showing the available options.")
 
     @app.get("/", defaults={"subpath": ""})
     @app.get("/browse/<path:subpath>")

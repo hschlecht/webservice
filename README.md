@@ -41,6 +41,11 @@ pip install -r requirements.txt
 
 - `GET /` and `GET /browse/<path>` — browse directories / download files
 - `GET /health` — health check, returns `{"status": "ok", "root": "..."}`
+- `POST /options` — **Windows only.** Opens a real Command Prompt window on
+  the machine running the service and runs `start_server.py --help` in it,
+  so you can see the launcher's options. There's a "Show start_server.py
+  options" button at the bottom of the directory listing that triggers it.
+  On any other OS it returns a 400 error instead of opening a window.
 
 All paths are resolved against the configured root directory; requests that
 try to escape it (e.g. via `..`) are rejected with a 404.

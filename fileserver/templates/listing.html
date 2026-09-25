@@ -14,6 +14,8 @@
     .dir::before { content: "\1F4C1 "; }
     .file::before { content: "\1F4C4 "; }
     .size, .modified { color: #666; font-size: 0.9rem; white-space: nowrap; }
+    form { margin-top: 1.5rem; }
+    button { font: inherit; padding: 0.4rem 0.9rem; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -39,5 +41,9 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <form action="/options" method="post">
+    <button type="submit">Show start_server.py options</button>
+  </form>
 </body>
 </html>
